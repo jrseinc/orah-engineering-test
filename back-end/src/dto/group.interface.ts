@@ -5,6 +5,15 @@ export class  CreateGroupDTO {
     roll_states: string;
     incidents: number;
     ltmt: string;
-    run_at?: Date;
+}
+
+export class  UpdateGroupDTO {
+    id: number;
+    name: string;
+    number_of_weeks: number;
+    roll_states: string;
+    incidents: number;
+    ltmt: string;
+    student_count: number
 }
 

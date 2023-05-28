@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
-import { CreateGroupDTO } from "../dto/group.interface"
-import { IsNotEmpty, IsString } from 'class-validator';
+import { CreateGroupDTO, UpdateGroupDTO } from "../dto/group.interface"
+import { IsNotEmpty, IsString, IsInt, IsIn, IsDate, IsNumber } from 'class-validator';
 
 @Entity()
 export class Group {
@@ -13,15 +13,18 @@ export class Group {
   name: string
 
   @Column()
+  @IsInt({ message: 'Number of weeks must be an integer' })
   number_of_weeks: number
 
   @Column()
   roll_states: string
 
   @Column()
+  @IsInt({ message: 'Incidents must be an integer' })
   incidents: number
 
   @Column()
+  @IsIn(['<', '>'], { message: 'LTMT must be either "<" or ">"' })
   ltmt: string
 
   @Column({
@@ -33,14 +36,23 @@ export class Group {
   student_count: number
 
 
-  public prepareToCreate(input: CreateGroupDTO) {
-    const {name, number_of_weeks, roll_states, incidents, ltmt, run_at} = input
+  private setGroupProperties(input: CreateGroupDTO | UpdateGroupDTO) {
+    const { name, number_of_weeks, roll_states, incidents, ltmt } = input
     this.name = name
     this.number_of_weeks = number_of_weeks
     this.roll_states = roll_states
     this.incidents = incidents
     this.ltmt = ltmt
+  }
+
+  public prepareToCreate(input: CreateGroupDTO) {
+    this.setGroupProperties(input)
     this.student_count = 0
   }
 
+  public prepareToUpdate(input: UpdateGroupDTO) {
+    this.setGroupProperties(input)
+    this.student_count = input.student_count
+    this.id = input.id
+  }
 }
