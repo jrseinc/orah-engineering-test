@@ -26,3 +26,7 @@ export class GroupDTO {
     ltmt: string;
     student_count: number
 }
+
+export class GroupDeleteDTO {
+    id: number
+}

@@ -1,13 +1,23 @@
 import { NextFunction, Request, Response } from "express"
 import { Group } from "../entity/group.entity"
+import { GroupStudent as GroupStudentEntity } from "../entity/group-student.entity"
+import { StudentRollState } from "../entity/student-roll-state.entity"
+import { Roll as RollEntity } from "../entity/roll.entity"
+
+import {Roll} from "../interface/roll.interface"
+
 import { getRepository } from "typeorm"
 
-import { CreateGroupDTO, UpdateGroupDTO, GroupDTO } from "../dto/group.interface"
+import { CreateGroupDTO, UpdateGroupDTO, GroupDTO, GroupDeleteDTO } from "../dto/group.dto"
 
 import { validate } from "class-validator"
 
 export class GroupController {
   private groupRepository = getRepository(Group)
+  private rollRepository = getRepository(RollEntity)
+  private StudentRollStateRepository = getRepository(StudentRollState)
+  private GroupStudentRepository = getRepository(GroupStudentEntity)
+
 
   /**
    * Fetches all groups from the database.
@@ -108,14 +118,46 @@ export class GroupController {
     }
   }
 
+  /**
+   * Remove a group from the database.
+   * @param request - The request object containing the group ID in the parameters.
+   * @param response - The response object used to send the HTTP response.
+   * @param next - The next function used for middleware chaining.
+   * @returns A JSON response indicating the status of the deletion operation.
+   */
   async removeGroup(request: Request, response: Response, next: NextFunction) {
-    // Task 1:
-    // Delete a Group
-  }
+    try {
+      const { id } = request.params
+      console.log(typeof id)
+      // Validate request body using GroupDelete DTO
+      const deleteGroupInput: GroupDeleteDTO = { id }
+      const errors = await validate(deleteGroupInput)
 
+      // If validation errors exist, return a 400 response with error details
+      if (errors.length > 0) {
+        return response.status(400).json({ error: "Validation failed", details: errors })
+      }
+
+      // Find the group by ID
+      const group = await this.groupRepository.findOne(id)
+
+      // If group is not found then return with 404 response
+      if (!group) {
+        return response.status(404).json({ error: "Group not found" })
+      }
+
+      // Delete the group
+      await this.groupRepository.delete(id)
+
+      return response.status(200).json({ message: "Group deleted successfully" })
+    } catch (error) {
+      // Handle any unexpected errors
+      console.error("Error while deleting group:", error)
+      return response.status(500).json({ error: "Internal server error" })
+    }
+  }
   async getGroupStudents(request: Request, response: Response, next: NextFunction) {
-    // Task 1:
-    // Return the list of Students that are in a Group
+
   }
 
   async runGroupFilters(request: Request, response: Response, next: NextFunction) {

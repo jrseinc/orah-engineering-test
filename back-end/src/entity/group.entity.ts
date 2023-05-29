@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
-import { CreateGroupDTO, UpdateGroupDTO } from "../dto/group.interface"
+import { CreateGroupDTO, UpdateGroupDTO } from "../dto/group.dto"
 import { IsNotEmpty, IsString, IsInt, IsIn, IsDate, IsNumber } from 'class-validator';
 
 @Entity()
