@@ -59,7 +59,7 @@ export const Routes = [
   },
   {
     method: "delete",
-    route: "/roll/delete",
+    route: "/roll/:id",
     controller: RollController,
     action: "removeRoll",
   },
@@ -102,5 +102,26 @@ export const Routes = [
     route: "/group/get-all",
     controller: GroupController,
     action: "allGroups",
+  },
+
+  {
+    method: "delete",
+    route: "/group/:id",
+    controller: GroupController,
+    action: "removeGroup",
+  },
+
+  {
+    method: "post",
+    route: "/group/run-group-filters",
+    controller: GroupController,
+    action: "runGroupFilters",
+  },
+
+  {
+    method: "get",
+    route: "/group/get-students-in-group/:groupId",
+    controller: GroupController,
+    action: "getGroupStudents",
   },
 ]
