@@ -8,3 +8,9 @@ export interface UpdateRollInput {
   name: string
   completed_at: Date
 }
+
+export interface Roll {
+  id: number
+  name: string
+  completed_at: Date
+}
