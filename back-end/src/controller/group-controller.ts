@@ -1,23 +1,20 @@
 import { NextFunction, Request, Response } from "express"
 import { Group } from "../entity/group.entity"
-import { GroupStudent as GroupStudentEntity } from "../entity/group-student.entity"
-import { StudentRollState } from "../entity/student-roll-state.entity"
-import { Roll as RollEntity } from "../entity/roll.entity"
+import { GroupStudent } from "../entity/group-student.entity"
 
-import {Roll} from "../interface/roll.interface"
+import { Roll } from "../interface/roll.interface"
 
 import { getRepository } from "typeorm"
 
 import { CreateGroupDTO, UpdateGroupDTO, GroupDTO, GroupDeleteDTO } from "../dto/group.dto"
+import { StudentGroup } from "../dto/student.dto"
 
 import { validate } from "class-validator"
+import { Student } from "../entity/student.entity"
 
 export class GroupController {
   private groupRepository = getRepository(Group)
-  private rollRepository = getRepository(RollEntity)
-  private StudentRollStateRepository = getRepository(StudentRollState)
-  private GroupStudentRepository = getRepository(GroupStudentEntity)
-
+  private studentRepository = getRepository(Student)
 
   /**
    * Fetches all groups from the database.
@@ -156,8 +153,38 @@ export class GroupController {
       return response.status(500).json({ error: "Internal server error" })
     }
   }
-  async getGroupStudents(request: Request, response: Response, next: NextFunction) {
 
+  /**
+   * Fetches students belonging to a group.
+   * @param request - The Express request object.
+   * @param response - The Express response object.
+   * @param next - The NextFunction to pass control to the next middleware.
+   * @returns {Promise<StudentGroup[]>} A Promise that resolves to an array of students with full names.
+   */
+  async getGroupStudents(request: Request, response: Response, next: NextFunction): Promise<StudentGroup[]> {
+    const id = request.params.groupId
+
+    // Find the group by ID
+    const group = await this.groupRepository.findOne(id)
+
+    // If group is not found, return with 404 response
+    if (!group) {
+      return response.status(404).json({ error: "Group not found" })
+    }
+
+    const students = await this.studentRepository
+      .createQueryBuilder("student")
+      .leftJoinAndSelect(GroupStudent, "groupStudent", "student.id = groupStudent.student_id")
+      .select(["student.first_name", "student.last_name", "student.id"])
+      .where("groupStudent.group_id = :group_id", { group_id: 25 })
+      .getMany()
+
+    // Add full_name property to each student object
+    const studentsWithFullName : StudentGroup[] = students.map((student) => {
+      return { ...student, full_name: `${student.first_name} ${student.last_name}` }
+    })
+
+    return studentsWithFullName
   }
 
   async runGroupFilters(request: Request, response: Response, next: NextFunction) {
