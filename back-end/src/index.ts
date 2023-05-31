@@ -3,7 +3,9 @@ import { createConnection } from "typeorm"
 import * as express from "express"
 import * as bodyParser from "body-parser"
 import * as cors from "cors"
-import { Request, Response } from "express"
+import { Request, Response, NextFunction } from "express";
+import { houston } from "./middleware/houston.middleware"
+
 import { Routes } from "./routes"
 import { Student } from "./entity/student.entity"
 
@@ -13,6 +15,7 @@ createConnection()
     const app = express()
     app.use(cors())
     app.use(bodyParser.json())
+    
 
     // register express routes from defined application routes
     Routes.forEach((route) => {
@@ -26,6 +29,8 @@ createConnection()
 
       })
     })
+
+    app.use(houston)
 
     // start express server
     app.listen(4001)

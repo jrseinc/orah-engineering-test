@@ -7,6 +7,7 @@ import { getRepository } from "typeorm"
 
 import { CreateGroupDTO, UpdateGroupDTO, GroupDTO, GroupDeleteDTO } from "../dto/group.dto"
 import { StudentGroupDTO } from "../dto/student.dto"
+import { createStudentGroup } from "../interface/student-group.interface"
 
 import { validate } from "class-validator"
 import { Student } from "../entity/student.entity"
@@ -14,8 +15,7 @@ import { Student } from "../entity/student.entity"
 import { convertCsvToArray, generatePastTimestamp } from "../utils/utils"
 import { StudentRollState } from "../entity/student-roll-state.entity"
 import { CreateStudentInput } from "../interface/student.interface"
-
-
+import { HoustonCustomError } from "../middleware/houston.middleware"
 
 export class GroupController {
   private groupRepository = getRepository(Group)
@@ -30,16 +30,14 @@ export class GroupController {
    * @param request - The Express Request object.
    * @param response - The Express Response object.
    * @param next - The Express NextFunction.
-   * @returns {Promise<GroupDTO[]>} A promise that resolves to an array of GroupDTO objects representing all groups.
+   * @returns {Promise<Response<GroupDTO[]>>} Returns Groups Array
    */
-  async allGroups(request: Request, response: Response, next: NextFunction): Promise<GroupDTO[]> {
+  async allGroups(request: Request, response: Response, next: NextFunction): Promise<Response<GroupDTO[]>> {
     try {
       const allGroups = await this.groupRepository.find()
       return response.status(200).json(allGroups)
     } catch (error) {
-      // Handle any unexpected errors
-      console.error("Error while retrieving groups:", error)
-      return response.status(500).json({ error: "Internal server error" })
+      next(error)
     }
   }
 
@@ -48,37 +46,45 @@ export class GroupController {
    * @param {Request} request - The request object.
    * @param {Response} response - The response object.
    * @param {NextFunction} next - The next middleware function.
-   * @returns {Promise<Group>} A Promise that resolves to the saved group state or an error response.
    */
-  async createGroup(request: Request, response: Response, next: NextFunction): Promise<Group> {
-    // Extract the request body parameters
-    const { body: params } = request
+  async createGroup(request: Request, response: Response, next: NextFunction) {
+    try {
+      // Extract the request body parameters
+      const { name, number_of_weeks, roll_states, incidents, ltmt } = request.body
 
-    // Create a CreateGroupDTO object with the extracted parameters
-    const createGroupInput: CreateGroupDTO = {
-      name: params.name,
-      number_of_weeks: params.number_of_weeks,
-      roll_states: params.roll_states,
-      incidents: params.incidents,
-      ltmt: params.ltmt,
+      // Create a CreateGroupDTO object with the extracted parameters
+      const createGroupInput: CreateGroupDTO = {
+        name,
+        number_of_weeks,
+        roll_states,
+        incidents,
+        ltmt,
+      }
+
+      // Create a new Group instance
+      const groupState = new Group()
+
+      // Prepare the Group instance for creation using the createGroupInput
+      groupState.prepareToCreate(createGroupInput)
+
+      // Validate createGroupInput using class-validator
+      const errors = await validate(groupState)
+
+      if (errors.length > 0) {
+        // If there are validation errors, send the response with error details
+        const error: HoustonCustomError = new Error("Validation Failed")
+        error.statusCode = 400
+        error.message = errors
+        throw error
+      }
+
+      // Save the groupState using the groupRepository
+      this.groupRepository.save(groupState)
+
+      return response.status(201).json(groupState)
+    } catch (error) {
+      next(error)
     }
-
-    // Create a new Group instance
-    const groupState = new Group()
-
-    // Prepare the Group instance for creation using the createGroupInput
-    groupState.prepareToCreate(createGroupInput)
-
-    // Validate createGroupInput using class-validator
-    const errors = await validate(groupState)
-
-    if (errors.length > 0) {
-      // If there are validation errors, send the response with error details
-      return response.status(400).json({ error: "Validation failed", details: errors })
-    }
-
-    // Save the groupState using the groupRepository
-    return this.groupRepository.save(groupState)
   }
 
   /**
@@ -90,36 +96,42 @@ export class GroupController {
    * @returns {Promise<Group>} A Promise that resolves to the updated group or an error response.
    */
   async updateGroup(request: Request, response: Response, next: NextFunction): Promise<Group> {
-    const { body: params } = request
-    const id = request.params.id
+    try {
+      const { body: params } = request
+      const id = request.params.id
 
-    // Find the existing group by ID
-    const existingGroup = await this.groupRepository.findOne(id)
+      // Find the existing group by ID
+      const existingGroup = await this.groupRepository.findOne(id)
 
-    if (existingGroup !== undefined) {
-      const updateGroupInput: UpdateGroupDTO = {
-        id: existingGroup.id,
-        incidents: params?.incidents ? params?.incidents : existingGroup.incidents,
-        ltmt: params?.ltmt ? params.ltmt : existingGroup.ltmt,
-        name: params?.name ? params.name : existingGroup.name,
-        number_of_weeks: params?.number_of_weeks ? params.number_of_weeks : existingGroup.number_of_weeks,
-        roll_states: params?.roll_states ? params.roll_states : existingGroup.roll_states,
-        student_count: params?.student_count ? params.student_count : existingGroup.student_count,
+      if (existingGroup !== undefined) {
+        const updateGroupInput: UpdateGroupDTO = {
+          id: existingGroup.id,
+          incidents: params?.incidents ? params?.incidents : existingGroup.incidents,
+          ltmt: params?.ltmt ? params.ltmt : existingGroup.ltmt,
+          name: params?.name ? params.name : existingGroup.name,
+          number_of_weeks: params?.number_of_weeks ? params.number_of_weeks : existingGroup.number_of_weeks,
+          roll_states: params?.roll_states ? params.roll_states : existingGroup.roll_states,
+          student_count: params?.student_count ? params.student_count : existingGroup.student_count,
+        }
+
+        // Validate updateGroupInput using class-validator
+        const errors = await validate(existingGroup)
+
+        if (errors.length > 0) {
+          const error: HoustonCustomError = new Error("Validation Failed")
+          error.statusCode = 400
+          error.message = errors
+          throw error
+        }
+
+        existingGroup.prepareToUpdate(updateGroupInput)
+        return this.groupRepository.save(existingGroup)
+      } else {
+        // If the group is not found, send a 404 error response
+        return response.status(404).json({ error: "Group not found" })
       }
-
-      // Validate updateGroupInput using class-validator
-      const errors = await validate(existingGroup)
-
-      if (errors.length > 0) {
-        // If there are validation errors, send the response with error details
-        return response.status(400).json({ error: "Validation failed", details: errors })
-      }
-
-      existingGroup.prepareToUpdate(updateGroupInput)
-      return this.groupRepository.save(existingGroup)
-    } else {
-      // If the group is not found, send a 404 error response
-      return response.status(404).json({ error: "Group not found" })
+    } catch (error) {
+      next(error)
     }
   }
 
@@ -140,7 +152,10 @@ export class GroupController {
 
       // If validation errors exist, return a 400 response with error details
       if (errors.length > 0) {
-        return response.status(400).json({ error: "Validation failed", details: errors })
+        const error: HoustonCustomError = new Error("Validation Failed")
+        error.statusCode = 400
+        error.message = errors
+        throw error
       }
 
       // Find the group by ID
@@ -148,7 +163,9 @@ export class GroupController {
 
       // If group is not found then return with 404 response
       if (!group) {
-        return response.status(404).json({ error: "Group not found" })
+        const error: HoustonCustomError = new Error("Target Group Not Found")
+        error.statusCode = 404
+        throw error
       }
 
       // Delete the group
@@ -156,9 +173,7 @@ export class GroupController {
 
       return response.status(200).json({ message: "Group deleted successfully" })
     } catch (error) {
-      // Handle any unexpected errors
-      console.error("Error while deleting group:", error)
-      return response.status(500).json({ error: "Internal server error" })
+      next(error)
     }
   }
 
@@ -169,114 +184,132 @@ export class GroupController {
    * @param next - The NextFunction to pass control to the next middleware.
    * @returns {Promise<StudentGroup[]>} A Promise that resolves to an array of students with full names.
    */
-  // async getGroupStudents(request: Request, response: Response, next: NextFunction): Promise<StudentGroupDTO[]> {
-  //   const id = request.params.groupId
+  async getGroupStudents(request: Request, response: Response, next: NextFunction): Promise<StudentGroupDTO[]> {
+    try {
+      const id = request.params.groupId
 
-  //   // Find the group by ID
-  //   const group = await this.groupRepository.findOne(id)
+      // Find the group by ID
+      const group = await this.groupRepository.findOne(id)
 
-  //   // If group is not found, return with 404 response
-  //   if (!group) {
-  //     return response.status(404).json({ error: "Group not found" })
-  //   }
-
-  //   const students = await this.studentRepository
-  //     .createQueryBuilder("student")
-  //     .leftJoinAndSelect(GroupStudent, "groupStudent", "student.id = groupStudent.student_id")
-  //     .select(["student.first_name", "student.last_name", "student.id"])
-  //     .where("groupStudent.group_id = :group_id", { group_id: 25 })
-  //     .getMany()
-
-  //   // Add full_name property to each student object
-  //   const studentsWithFullName: StudentGroup[] = students.map((student) => {
-  //     return { ...student, full_name: `${student.first_name} ${student.last_name}` }
-  //   })
-
-  //   return studentsWithFullName
-  // }
-
-  async runGroupFilters(request: Request, response: Response, next: NextFunction) {
-    // Task 2:
-    // 1. Clear out the groups (delete all the students from the groups)
-    // 2. For each group, query the student rolls to see which students match the filter for the group
-    // 3. Add the list of students that match the filter to the group
-
-    // Clear Group Students
-    await this.groupStudentRepository.clear()
-
-    // Get all the groups
-    const groups: GroupDTO[] = await this.groupRepository.find()
-
-    const studentRollsPromise = []
-
-    // Get the current timestamp in ISO format
-    const currentTimestamp = new Date().toISOString()
-
-    groups.forEach( async (group) => {
-      const arrayOfStates = convertCsvToArray(group.roll_states, ",")
-      const groupId = group.id
-      const numberOfWeeks = group.number_of_weeks
-      const incidents = group.incidents
-      const ltmt = group.ltmt
-
-      const pastTimestamp = generatePastTimestamp(currentTimestamp, numberOfWeeks)
-
-
-      const roll = await this.rollRepository
-      .createQueryBuilder("roll")
-      .select("roll.id as id")
-      .where("roll.completed_at <= :currentTimestamp", { currentTimestamp })
-      .andWhere("roll.completed_at > :pastTimestamp", { pastTimestamp })
-      .getRawMany()
-
-      const rollIDs = roll.map((roll) => roll.id)
-
-
-      const students = await this.studentRollState
-      .createQueryBuilder("studentRoll")
-      .select("studentRoll.student_id, COUNT(*)", "incident_count")
-      .addSelect(`${groupId}`, "group_id")
-      .where(`studentRoll.roll_id IN (${rollIDs})`)
-      .andWhere("studentRoll.state IN (:...arrayOfStates)", { arrayOfStates })
-      .groupBy("studentRoll.student_id")
-      .having(`COUNT(*) ${ltmt} ${incidents}`)
-      .getRawMany()
-
-
-      const groupStudentUpdate: GroupStudent[] = []
-
-      students.forEach(student => {
-        const createStudentGroupInput: StudentGroupDTO = {
-          student_id: student.student_id,
-          group_id: student.group_id,
-          incident_count: student.incident_count
-        }
-
-        const groupStudent = new GroupStudent()
-        groupStudent.prepareToCreate(createStudentGroupInput)
-        groupStudentUpdate.push(groupStudent)
-      });
-
-      await this.groupStudentRepository.save(groupStudentUpdate)
-      
-      const groupData = await this.groupRepository.findOne(groupId)
-
-      
-      const updateGroupInput:  UpdateGroupDTO & {run_at: string} = {
-        id: groupData.id,
-        name: groupData.name,
-        number_of_weeks: groupData.number_of_weeks,
-        roll_states: groupData.roll_states,
-        ltmt: groupData.ltmt,
-        run_at: new Date().toISOString(),
-        incidents: groupData.incidents,
-        student_count: students.length
+      // If group is not found, return with 404 response
+      if (!group) {
+        const error: HoustonCustomError = new Error("Target Group Not Found")
+        error.statusCode = 404
+        throw error
       }
 
-      groupData.prepareToUpdate(updateGroupInput)
-      await this.groupRepository.save(groupData)
-      
-    })
-    return response.status(200).json({ message: "Group Filter Ran successfully" })
+      const students = await this.studentRepository
+        .createQueryBuilder("student")
+        .leftJoin(GroupStudent, "groupStudent", "student.id = groupStudent.student_id")
+        .select(["student.first_name", "student.last_name", "student.id"])
+        .where("groupStudent.group_id = :group_id", { group_id: 25 })
+        .getMany()
+
+      // Add full_name property to each student object
+      const studentsWithFullName: StudentGroupDTO[] = students.map((student) => {
+        return {
+          student_id: student.id,
+          first_name: student.first_name,
+          last_name: student.last_name,
+          full_name: `${student.first_name} ${student.last_name}`,
+        }
+      })
+
+      return studentsWithFullName
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Runs group filters.
+   * @param {Request} request - The request object.
+   * @param {Response} response - The response object.
+   * @param {NextFunction} next - The next middleware function.
+   * @returns {Response<any> } A Promise that resolves when group filters are run successfully.
+   */
+  async runGroupFilters(request: Request, response: Response, next: NextFunction): Response<any> {
+    try {
+      // Clear Group Students
+      await this.groupStudentRepository.clear()
+
+      // Get all the groups
+      const groups = await this.groupRepository.find()
+
+      // Get the current timestamp in ISO format
+      const currentTimestamp = new Date().toISOString()
+
+      groups.forEach(async (group) => {
+        // Convert the roll_states string into an array
+        const arrayOfStates = convertCsvToArray(group.roll_states, ",")
+
+        const groupId = group.id
+        const numberOfWeeks = group.number_of_weeks
+        const incidents = group.incidents
+        const ltmt = group.ltmt
+
+        // Generate the past timestamp based on the current timestamp and number of weeks
+        const pastTimestamp = generatePastTimestamp(currentTimestamp, numberOfWeeks)
+
+        // Retrieve the rolls within the specified time range
+        const roll = await this.rollRepository
+          .createQueryBuilder("roll")
+          .select("roll.id as id")
+          .where("roll.completed_at <= :currentTimestamp", { currentTimestamp })
+          .andWhere("roll.completed_at > :pastTimestamp", { pastTimestamp })
+          .getRawMany()
+
+        const rollIDs = roll.map((roll) => roll.id)
+
+        // Retrieve students with the specified roll IDs and matching roll states
+        const students = await this.studentRollState
+          .createQueryBuilder("studentRoll")
+          .select("studentRoll.student_id, COUNT(*)", "incident_count")
+          .addSelect(`${groupId}`, "group_id")
+          .where(`studentRoll.roll_id IN (${rollIDs})`)
+          .andWhere("studentRoll.state IN (:...arrayOfStates)", { arrayOfStates })
+          .groupBy("studentRoll.student_id")
+          .having(`COUNT(*) ${ltmt} ${incidents}`)
+          .getRawMany()
+
+        const groupStudentUpdate: GroupStudent[] = []
+
+        students.forEach((student) => {
+          // Create an input object for creating GroupStudent
+          const createStudentGroupInput: createStudentGroup = {
+            student_id: student.student_id,
+            group_id: student.group_id,
+            incident_count: student.incident_count,
+          }
+
+          const groupStudent = new GroupStudent()
+          groupStudent.prepareToCreate(createStudentGroupInput)
+          groupStudentUpdate.push(groupStudent)
+        })
+
+        await this.groupStudentRepository.save(groupStudentUpdate)
+
+        const groupData = await this.groupRepository.findOne(groupId)
+
+        // Prepare the UpdateGroupDTO object with updated information
+        const updateGroupInput: UpdateGroupDTO & { run_at: string } = {
+          id: groupData.id,
+          name: groupData.name,
+          number_of_weeks: groupData.number_of_weeks,
+          roll_states: groupData.roll_states,
+          ltmt: groupData.ltmt,
+          run_at: new Date().toISOString(),
+          incidents: groupData.incidents,
+          student_count: students.length,
+        }
+
+        groupData.prepareToUpdate(updateGroupInput)
+        await this.groupRepository.save(groupData)
+      })
+
+      return response.status(200).json({ message: "Group Filter Ran successfully" })
+    } catch (error) {
+      next(error)
+    }
   }
 }
