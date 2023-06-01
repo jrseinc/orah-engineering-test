@@ -1,0 +1,247 @@
+{
+	"info": {
+		"_postman_id": "c1865db3-3363-4b3b-9e7d-967477b3a6e7",
+		"name": "Orah",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "10809694"
+	},
+	"item": [
+		{
+			"name": "Get All Students",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:4001/student/get-all",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4001",
+					"path": [
+						"student",
+						"get-all"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create A Roll",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"R3\",\r\n    \"completed_at\": \"2023-05-25:00:00:00\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4001/roll/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4001",
+					"path": [
+						"roll",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete A Roll",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:4001/roll/3",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4001",
+					"path": [
+						"roll",
+						"3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add student roll states to the roll",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\r\n    {\r\n        \"state\": \"unmark\",\r\n        \"student_id\": 5,\r\n        \"roll_id\": 1\r\n    },\r\n        {\r\n        \"state\": \"late\",\r\n        \"student_id\": 5,\r\n        \"roll_id\": 2\r\n    },\r\n    {\r\n        \"state\": \"late\",\r\n        \"student_id\": 5,\r\n        \"roll_id\": 3\r\n    },\r\n    {\r\n        \"state\": \"late\",\r\n        \"student_id\": 5,\r\n        \"roll_id\": 4\r\n    }\r\n\r\n    \r\n        \r\n]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4001/roll/add-student-states",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4001",
+					"path": [
+						"roll",
+						"add-student-states"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create a group",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"G4\",\r\n    \"number_of_weeks\": 4,\r\n    \"roll_states\": \"late,absent\",\r\n    \"incidents\": \"XX\",\r\n    \"ltmt\": \">\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4001/group/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4001",
+					"path": [
+						"group",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get the group list",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:4001/group/get-all",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4001",
+					"path": [
+						"group",
+						"get-all"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Group",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"Picklips\",\r\n    \"number_of_weeks\": 100,\r\n    \"incidents\": 33,\r\n    \"roll_states\": \"late\",\r\n    \"ltmt\": \"<\",\r\n    \"student_count\": 11100\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4001/group/16",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4001",
+					"path": [
+						"group",
+						"16"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Group",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:4001/group/100",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4001",
+					"path": [
+						"group",
+						"100"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Run the group filters",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:4001/group/run-group-filters",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4001",
+					"path": [
+						"group",
+						"run-group-filters"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get students in a group",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:4001/group/get-students-in-group/500",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4001",
+					"path": [
+						"group",
+						"get-students-in-group",
+						"500"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
