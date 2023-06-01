@@ -7,8 +7,8 @@ import { getRepository } from "typeorm"
 
 import { constants as STATUS_CODES } from "http2"
 
-import { CreateGroupDTO, UpdateGroupDTO, GroupDTO, GroupDeleteDTO } from "../dto/group.dto"
-import { StudentGroupDTO } from "../dto/student.dto"
+import { CreateGroup, UpdateGroup, GroupInterface, GroupDelete } from "../interface/group.interface"
+import { StudentGroup } from "../interface/student.interface"
 import { createStudentGroup } from "../interface/student-group.interface"
 
 import { validate } from "class-validator"
@@ -16,7 +16,6 @@ import { Student } from "../entity/student.entity"
 
 import { convertCsvToArray, generatePastTimestamp } from "../utils/utils"
 import { StudentRollState } from "../entity/student-roll-state.entity"
-import { CreateStudentInput } from "../interface/student.interface"
 import { HoustonCustomError } from "../middleware/houston.middleware"
 
 export class GroupController {
@@ -32,9 +31,8 @@ export class GroupController {
    * @param request - The Express Request object.
    * @param response - The Express Response object.
    * @param next - The Express NextFunction.
-   * @returns {Promise<Response<GroupDTO[]>>} Returns Groups Array
    */
-  async allGroups(request: Request, response: Response, next: NextFunction): Promise<Response<GroupDTO[]>> {
+  async allGroups(request: Request, response: Response, next: NextFunction){
     try {
       const allGroups = await this.groupRepository.find()
       return response.status(STATUS_CODES.HTTP_STATUS_OK).json(allGroups)
@@ -54,8 +52,8 @@ export class GroupController {
       // Extract the request body parameters
       const { name, number_of_weeks, roll_states, incidents, ltmt } = request.body
 
-      // Create a CreateGroupDTO object with the extracted parameters
-      const createGroupInput: CreateGroupDTO = {
+      // Create a CreateGroup object with the extracted parameters
+      const createGroupInput: CreateGroup = {
         name,
         number_of_weeks,
         roll_states,
@@ -92,9 +90,9 @@ export class GroupController {
    * @param request - The request object containing the update data.
    * @param response - The response object to send the result.
    * @param next - The next middleware function.
-   * @returns {Promise<Group>} A Promise that resolves to the updated group or an error response.
+
    */
-  async updateGroup(request: Request, response: Response, next: NextFunction): Promise<Group> {
+  async updateGroup(request: Request, response: Response, next: NextFunction){
     try {
       const { body: params } = request
       const id = request.params.id
@@ -103,7 +101,7 @@ export class GroupController {
       const existingGroup = await this.groupRepository.findOne(id)
 
       if (existingGroup !== undefined) {
-        const updateGroupInput: UpdateGroupDTO = {
+        const updateGroupInput: UpdateGroup = {
           id: existingGroup.id,
           incidents: params?.incidents ?? existingGroup.incidents,
           ltmt: params?.ltmt ?? existingGroup.ltmt,
@@ -146,7 +144,7 @@ export class GroupController {
       const { id } = request.params
       console.log(typeof id)
       // Validate request body using GroupDelete DTO
-      const deleteGroupInput: GroupDeleteDTO = { id }
+      const deleteGroupInput: GroupDelete = { id }
       const errors = await validate(deleteGroupInput)
 
       // If validation errors exist, return a 400 response with error details
@@ -177,9 +175,9 @@ export class GroupController {
    * @param request - The Express request object.
    * @param response - The Express response object.
    * @param next - The NextFunction to pass control to the next middleware.
-   * @returns {Promise<StudentGroup[]>} A Promise that resolves to an array of students with full names.
+
    */
-  async getGroupStudents(request: Request, response: Response, next: NextFunction): Promise<StudentGroupDTO[]> {
+  async getGroupStudents(request: Request, response: Response, next: NextFunction) {
     try {
       const id = request.params.groupId
 
@@ -199,7 +197,7 @@ export class GroupController {
         .getMany()
 
       // Add full_name property to each student object
-      const studentsWithFullName: StudentGroupDTO[] = students.map((student) => {
+      const studentsWithFullName: StudentGroup[] = students.map((student) => {
         return {
           student_id: student.id,
           first_name: student.first_name,
@@ -284,8 +282,8 @@ export class GroupController {
 
         const groupData = await this.groupRepository.findOne(groupId)
 
-        // Prepare the UpdateGroupDTO object with updated information
-        const updateGroupInput: UpdateGroupDTO & { run_at: string } = {
+        // Prepare the UpdateGroup object with updated information
+        const updateGroupInput: UpdateGroup & { run_at: string } = {
           id: groupData.id,
           name: groupData.name,
           number_of_weeks: groupData.number_of_weeks,

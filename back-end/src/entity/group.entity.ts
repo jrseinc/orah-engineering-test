@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
-import { CreateGroupDTO, UpdateGroupDTO } from "../dto/group.dto"
+import { CreateGroup, UpdateGroup } from "../interface/group.interface"
 import { IsNotEmpty, IsString, IsInt, IsIn, IsDate, IsNumber } from 'class-validator';
 
 @Entity()
@@ -36,7 +36,7 @@ export class Group {
   student_count: number
 
 
-  private setGroupProperties(input: CreateGroupDTO | UpdateGroupDTO) {
+  private setGroupProperties(input: CreateGroup | UpdateGroup) {
     const { name, number_of_weeks, roll_states, incidents, ltmt } = input
     this.name = name
     this.number_of_weeks = number_of_weeks
@@ -45,12 +45,12 @@ export class Group {
     this.ltmt = ltmt
   }
 
-  public prepareToCreate(input: CreateGroupDTO) {
+  public prepareToCreate(input: CreateGroup) {
     this.setGroupProperties(input)
     this.student_count = 0
   }
 
-  public prepareToUpdate(input: UpdateGroupDTO) {
+  public prepareToUpdate(input: UpdateGroup) {
     this.setGroupProperties(input)
     this.student_count = input.student_count
     this.id = input.id

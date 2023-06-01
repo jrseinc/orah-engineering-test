@@ -1,4 +1,4 @@
-export class GroupDTO {
+export interface GroupInterface {
     id: number;
     name: string;
     number_of_weeks: number;
@@ -8,7 +8,7 @@ export class GroupDTO {
     student_count: number
 }
 
-export class  CreateGroupDTO {
+export interface  CreateGroup {
     name: string;
     number_of_weeks: number;
     roll_states: string;
@@ -16,7 +16,7 @@ export class  CreateGroupDTO {
     ltmt: string;
 }
 
-export class  UpdateGroupDTO {
+export interface  UpdateGroup {
     id: number;
     name: string;
     number_of_weeks: number;
@@ -26,6 +26,6 @@ export class  UpdateGroupDTO {
     student_count: number
 }
 
-export class GroupDeleteDTO {
+export interface GroupDelete {
     id: number
 }
