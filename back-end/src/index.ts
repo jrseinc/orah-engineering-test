@@ -21,8 +21,7 @@ createConnection()
     Routes.forEach((route) => {
       (app as any)[route.method](route.route, async (req: Request, res: Response, next: Function) => {
         try {
-          const result = await new (route.controller as any)()[route.action](req, res, next);
-          res.json(result !== null && result !== undefined ? result : undefined);
+          return await new (route.controller as any)()[route.action](req, res, next);
         } catch (error) {
           next(error);
         }

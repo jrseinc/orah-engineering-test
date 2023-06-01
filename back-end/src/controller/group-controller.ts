@@ -121,8 +121,8 @@ export class GroupController {
           throw new HoustonCustomError( STATUS_CODES.HTTP_STATUS_BAD_REQUEST ,"Validation Failed", errors)
         }
 
-        
-        return this.groupRepository.save(existingGroup)
+
+        return response.status(STATUS_CODES.HTTP_STATUS_OK).json(existingGroup)
       } else {
         // If the group is not found, send a 404 error response
         return response.status(STATUS_CODES.HTTP_STATUS_NOT_FOUND).json({ error: "Group not found" })

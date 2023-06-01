@@ -4,6 +4,8 @@ import { Roll } from "../entity/roll.entity"
 import { StudentRollState } from "../entity/student-roll-state.entity"
 import { CreateRollInput, UpdateRollInput } from "../interface/roll.interface"
 import { CreateStudentRollStateInput, UpdateStudentRollStateInput } from "../interface/student-roll-state.interface"
+import { constants as STATUS_CODES } from "http2"
+
 import { map } from "lodash"
 
 export class RollController {
@@ -11,7 +13,8 @@ export class RollController {
   private studentRollStateRepository = getRepository(StudentRollState)
 
   async allRolls(request: Request, response: Response, next: NextFunction) {
-    return this.rollRepository.find()
+    const allRolls = await  this.rollRepository.find()
+    return response.status(STATUS_CODES.HTTP_STATUS_OK).json(allRolls)
   }
 
   async createRoll(request: Request, response: Response, next: NextFunction) {
@@ -23,30 +26,35 @@ export class RollController {
     }
     const roll = new Roll()
     roll.prepareToCreate(createRollInput)
-    return this.rollRepository.save(roll)
+    const newRoll = await  this.rollRepository.save(roll)
+    return response.status(STATUS_CODES.HTTP_STATUS_OK).json(newRoll)
   }
 
   async updateRoll(request: Request, response: Response, next: NextFunction) {
     const { body: params } = request
 
-    this.rollRepository.findOne(params.id).then((roll) => {
+    const roll = await this.rollRepository.findOne(params.id)
       const updateRollInput: UpdateRollInput = {
         id: params.id,
         name: params.name,
         completed_at: params.completed_at,
       }
+
       roll.prepareToUpdate(updateRollInput)
-      return this.rollRepository.save(roll)
-    })
+      const updatedRoll = await this.rollRepository.save(roll)
+      return response.status(STATUS_CODES.HTTP_STATUS_OK).json(updatedRoll)
+
   }
 
   async removeRoll(request: Request, response: Response, next: NextFunction) {
     let rollToRemove = await this.rollRepository.findOne(request.params.id)
     await this.rollRepository.remove(rollToRemove)
+    return response.status(STATUS_CODES.HTTP_STATUS_OK).json({message: "Removed Roll With Id: ${rollToRemove}"})
   }
 
   async getRoll(request: Request, response: Response, next: NextFunction) {
-    return this.studentRollStateRepository.find({ roll_id: request.params.id })
+    const roll = await  this.studentRollStateRepository.find({ roll_id: request.params.id })
+    return response.status(STATUS_CODES.HTTP_STATUS_OK).json(roll)
   }
 
   async addStudentRollStates(request: Request, response: Response, next: NextFunction) {
@@ -63,7 +71,8 @@ export class RollController {
       return studentRollState
     })
 
-    return this.studentRollStateRepository.save(studentRollStates)
+    const result = await this.studentRollStateRepository.save(studentRollStates)
+    return response.status(STATUS_CODES.HTTP_STATUS_OK).json(result)
   }
 
   async addStudentRollState(request: Request, response: Response, next: NextFunction) {
@@ -76,13 +85,15 @@ export class RollController {
     }
     const studentRollState = new StudentRollState()
     studentRollState.prepareToCreate(createStudentRollStateInput)
-    return this.studentRollStateRepository.save(studentRollState)
+    await this.studentRollStateRepository.save(studentRollState)
+
+    return response.status(STATUS_CODES.HTTP_STATUS_OK).json(studentRollState)
   }
 
   async updateStudentRollState(request: Request, response: Response, next: NextFunction) {
     const { body: params } = request
 
-    this.studentRollStateRepository.findOne(params.id).then((studentRollState) => {
+    const studentRollState = await this.studentRollStateRepository.findOne(params.id)
       const updateStudentRollStateInput: UpdateStudentRollStateInput = {
         id: params.id,
         roll_id: params.roll_id,
@@ -90,7 +101,8 @@ export class RollController {
         state: params.state,
       }
       studentRollState.prepareToUpdate(updateStudentRollStateInput)
-      return this.studentRollStateRepository.save(studentRollState)
-    })
+      const updatedStudentRollState = await this.studentRollStateRepository.save(studentRollState)
+    
+      return response.status(STATUS_CODES.HTTP_STATUS_OK).json(updatedStudentRollState)
   }
 }
