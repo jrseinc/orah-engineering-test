@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 import { CreateGroup, UpdateGroup } from "../interface/group.interface"
 import { IsNotEmpty, IsString, IsInt, IsIn, IsDate, IsNumber } from 'class-validator';
+import {IsValidCsv} from "../utils/csvValidator"
 
 @Entity()
 export class Group {
@@ -17,6 +18,7 @@ export class Group {
   number_of_weeks: number
 
   @Column()
+  @IsValidCsv()
   roll_states: string
 
   @Column()
