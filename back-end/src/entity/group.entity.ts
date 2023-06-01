@@ -52,9 +52,12 @@ export class Group {
     this.student_count = 0
   }
 
-  public prepareToUpdate(input: UpdateGroup) {
+  public prepareToUpdate(input: UpdateGroup, run_at?: Date) {
     this.setGroupProperties(input)
     this.student_count = input.student_count
     this.id = input.id
+
+    if(run_at) 
+    this.run_at = run_at
   }
 }

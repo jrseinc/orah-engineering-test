@@ -142,7 +142,6 @@ export class GroupController {
   async removeGroup(request: Request, response: Response, next: NextFunction) {
     try {
       const { id } = request.params
-      console.log(typeof id)
       // Validate request body using GroupDelete DTO
       const deleteGroupInput: GroupDelete = { id }
       const errors = await validate(deleteGroupInput)
@@ -189,13 +188,15 @@ export class GroupController {
         throw new HoustonCustomError( STATUS_CODES.HTTP_STATUS_NOT_FOUND ,`Target Group Not Found With ID: ${id}`)
       }
 
+      
       const students = await this.studentRepository
         .createQueryBuilder("student")
         .leftJoin(GroupStudent, "groupStudent", "student.id = groupStudent.student_id")
         .select(["student.first_name", "student.last_name", "student.id"])
-        .where("groupStudent.group_id = :group_id", { group_id: 25 })
+        .where("groupStudent.group_id = :group_id", { group_id: id })
         .getMany()
 
+      console.log(students)
       // Add full_name property to each student object
       const studentsWithFullName: StudentGroup[] = students.map((student) => {
         return {
@@ -250,6 +251,7 @@ export class GroupController {
           .andWhere("roll.completed_at > :pastTimestamp", { pastTimestamp })
           .getRawMany()
 
+
         const rollIDs = roll.map((roll) => roll.id)
 
         // Retrieve students with the specified roll IDs and matching roll states
@@ -262,6 +264,7 @@ export class GroupController {
           .groupBy("studentRoll.student_id")
           .having(`COUNT(*) ${ltmt} ${incidents}`)
           .getRawMany()
+
 
         const groupStudentUpdate: GroupStudent[] = []
 
@@ -283,18 +286,17 @@ export class GroupController {
         const groupData = await this.groupRepository.findOne(groupId)
 
         // Prepare the UpdateGroup object with updated information
-        const updateGroupInput: UpdateGroup & { run_at: string } = {
+        const updateGroupInput: UpdateGroup  = {
           id: groupData.id,
           name: groupData.name,
           number_of_weeks: groupData.number_of_weeks,
           roll_states: groupData.roll_states,
           ltmt: groupData.ltmt,
-          run_at: new Date().toISOString(),
           incidents: groupData.incidents,
           student_count: students.length,
         }
 
-        groupData.prepareToUpdate(updateGroupInput)
+        groupData.prepareToUpdate(updateGroupInput, new Date(currentTimestamp))
         await this.groupRepository.save(groupData)
       })
 
