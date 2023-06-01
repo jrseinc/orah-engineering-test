@@ -5,6 +5,8 @@ import { Roll } from "../entity/roll.entity"
 
 import { getRepository } from "typeorm"
 
+import { constants as STATUS_CODES } from "http2"
+
 import { CreateGroupDTO, UpdateGroupDTO, GroupDTO, GroupDeleteDTO } from "../dto/group.dto"
 import { StudentGroupDTO } from "../dto/student.dto"
 import { createStudentGroup } from "../interface/student-group.interface"
@@ -35,7 +37,7 @@ export class GroupController {
   async allGroups(request: Request, response: Response, next: NextFunction): Promise<Response<GroupDTO[]>> {
     try {
       const allGroups = await this.groupRepository.find()
-      return response.status(200).json(allGroups)
+      return response.status(STATUS_CODES.HTTP_STATUS_OK).json(allGroups)
     } catch (error) {
       next(error)
     }
@@ -72,13 +74,13 @@ export class GroupController {
 
       if (errors.length > 0) {
         // If there are validation errors, send the response with error details
-        throw new HoustonCustomError( 400 ,"Validation Failed", errors)
+        throw new HoustonCustomError( STATUS_CODES.HTTP_STATUS_NOT_FOUND ,"Validation Failed", errors)
       }
 
       // Save the groupState using the groupRepository
       this.groupRepository.save(groupState)
 
-      return response.status(201).json(groupState)
+      return response.status(STATUS_CODES.HTTP_STATUS_CREATED).json(groupState)
     } catch (error) {
       next(error)
     }
@@ -103,27 +105,29 @@ export class GroupController {
       if (existingGroup !== undefined) {
         const updateGroupInput: UpdateGroupDTO = {
           id: existingGroup.id,
-          incidents: params?.incidents ? params?.incidents : existingGroup.incidents,
-          ltmt: params?.ltmt ? params.ltmt : existingGroup.ltmt,
-          name: params?.name ? params.name : existingGroup.name,
-          number_of_weeks: params?.number_of_weeks ? params.number_of_weeks : existingGroup.number_of_weeks,
-          roll_states: params?.roll_states ? params.roll_states : existingGroup.roll_states,
-          student_count: params?.student_count ? params.student_count : existingGroup.student_count,
-        }
+          incidents: params?.incidents ?? existingGroup.incidents,
+          ltmt: params?.ltmt ?? existingGroup.ltmt,
+          name: params?.name ?? existingGroup.name,
+          number_of_weeks: params?.number_of_weeks ?? existingGroup.number_of_weeks,
+          roll_states: params?.roll_states ?? existingGroup.roll_states,
+          student_count: params?.student_count ?? existingGroup.student_count,
+        };
+
+        existingGroup.prepareToUpdate(updateGroupInput)
 
         // Validate updateGroupInput using class-validator
         const errors = await validate(existingGroup)
 
         if (errors.length > 0) {
           // If there are validation errors, send the response with error details
-          throw new HoustonCustomError( 400 ,"Validation Failed", errors)
+          throw new HoustonCustomError( STATUS_CODES.HTTP_STATUS_BAD_REQUEST ,"Validation Failed", errors)
         }
 
-        existingGroup.prepareToUpdate(updateGroupInput)
+        
         return this.groupRepository.save(existingGroup)
       } else {
         // If the group is not found, send a 404 error response
-        return response.status(404).json({ error: "Group not found" })
+        return response.status(STATUS_CODES.HTTP_STATUS_NOT_FOUND).json({ error: "Group not found" })
       }
     } catch (error) {
       next(error)
@@ -147,7 +151,7 @@ export class GroupController {
 
       // If validation errors exist, return a 400 response with error details
       if (errors.length > 0) {
-        throw new HoustonCustomError( 400 ,"Validation Failed")
+        throw new HoustonCustomError( STATUS_CODES.HTTP_STATUS_BAD_REQUEST ,"Validation Failed")
       }
 
       // Find the group by ID
@@ -156,13 +160,13 @@ export class GroupController {
       // If group is not found then return with 404 response
       if (!group) {
         // If there are validation errors, send the response with error details
-        throw new HoustonCustomError( 404 ,`Target Group Not Found With ID: ${id}`)
+        throw new HoustonCustomError( STATUS_CODES.HTTP_STATUS_NOT_FOUND ,`Target Group Not Found With ID: ${id}`)
       }
 
       // Delete the group
       await this.groupRepository.delete(id)
 
-      return response.status(200).json({ message: "Group deleted successfully" })
+      return response.status(STATUS_CODES.HTTP_STATUS_OK).json({ message: "Group deleted successfully" })
     } catch (error) {
       next(error)
     }
@@ -184,7 +188,7 @@ export class GroupController {
 
       // If group is not found, return with 404 response
       if (!group) {
-        throw new HoustonCustomError( 404 ,`Target Group Not Found With ID: ${id}`)
+        throw new HoustonCustomError( STATUS_CODES.HTTP_STATUS_NOT_FOUND ,`Target Group Not Found With ID: ${id}`)
       }
 
       const students = await this.studentRepository
@@ -204,7 +208,7 @@ export class GroupController {
         }
       })
 
-      return studentsWithFullName
+      return response.status(STATUS_CODES.HTTP_STATUS_OK).json(studentsWithFullName)
     } catch (error) {
       next(error)
     }
@@ -296,7 +300,7 @@ export class GroupController {
         await this.groupRepository.save(groupData)
       })
 
-      return response.status(200).json({ message: "Group Filter Ran successfully" })
+      return response.status(STATUS_CODES.HTTP_STATUS_OK).json({ message: "Group Filter Ran successfully" })
     } catch (error) {
       next(error)
     }
