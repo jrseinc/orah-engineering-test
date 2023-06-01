@@ -72,7 +72,7 @@ export class GroupController {
 
       if (errors.length > 0) {
         // If there are validation errors, send the response with error details
-        throw new HoustonCustomError( 400 ,"Validation Failed")
+        throw new HoustonCustomError( 400 ,"Validation Failed", errors)
       }
 
       // Save the groupState using the groupRepository
@@ -116,7 +116,7 @@ export class GroupController {
 
         if (errors.length > 0) {
           // If there are validation errors, send the response with error details
-          throw new HoustonCustomError( 400 ,"Validation Failed")
+          throw new HoustonCustomError( 400 ,"Validation Failed", errors)
         }
 
         existingGroup.prepareToUpdate(updateGroupInput)

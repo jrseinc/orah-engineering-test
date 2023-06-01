@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from "express";
  * Custom Class For Handling Errors
  */
 export class HoustonCustomError extends Error {
-  constructor(public readonly statusCode: number, message: string) {
+  constructor(public readonly statusCode: number, message: string,public readonly errors?: any) {
     super(message)
   }
 }
@@ -24,8 +24,9 @@ export function houston(
 ) {
   const statusCode = error.statusCode || 500;
   const message = error.message || "Internal Server Error";
+  const errors = error.errors || {}
 
   console.log(error); // Log the error for debugging purposes
 
-  response.status(statusCode).json({ error: message }); // Send the error response
+  response.status(statusCode).json({ message, errors }); // Send the error response
 }
