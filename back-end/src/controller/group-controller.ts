@@ -72,10 +72,7 @@ export class GroupController {
 
       if (errors.length > 0) {
         // If there are validation errors, send the response with error details
-        const error: HoustonCustomError = new Error("Validation Failed")
-        error.statusCode = 400
-        error.message = errors
-        throw error
+        throw new HoustonCustomError( 400 ,"Validation Failed")
       }
 
       // Save the groupState using the groupRepository
@@ -118,10 +115,8 @@ export class GroupController {
         const errors = await validate(existingGroup)
 
         if (errors.length > 0) {
-          const error: HoustonCustomError = new Error("Validation Failed")
-          error.statusCode = 400
-          error.message = errors
-          throw error
+          // If there are validation errors, send the response with error details
+          throw new HoustonCustomError( 400 ,"Validation Failed")
         }
 
         existingGroup.prepareToUpdate(updateGroupInput)
@@ -152,10 +147,7 @@ export class GroupController {
 
       // If validation errors exist, return a 400 response with error details
       if (errors.length > 0) {
-        const error: HoustonCustomError = new Error("Validation Failed")
-        error.statusCode = 400
-        error.message = errors
-        throw error
+        throw new HoustonCustomError( 400 ,"Validation Failed")
       }
 
       // Find the group by ID
@@ -163,9 +155,8 @@ export class GroupController {
 
       // If group is not found then return with 404 response
       if (!group) {
-        const error: HoustonCustomError = new Error("Target Group Not Found")
-        error.statusCode = 404
-        throw error
+        // If there are validation errors, send the response with error details
+        throw new HoustonCustomError( 404 ,`Target Group Not Found With ID: ${id}`)
       }
 
       // Delete the group
@@ -193,9 +184,7 @@ export class GroupController {
 
       // If group is not found, return with 404 response
       if (!group) {
-        const error: HoustonCustomError = new Error("Target Group Not Found")
-        error.statusCode = 404
-        throw error
+        throw new HoustonCustomError( 404 ,`Target Group Not Found With ID: ${id}`)
       }
 
       const students = await this.studentRepository

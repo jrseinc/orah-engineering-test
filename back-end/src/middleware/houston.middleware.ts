@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 
 /**
- * Custom error object interface with optional statusCode and required message.
+ * Custom Class For Handling Errors
  */
-export interface HoustonCustomError extends Error {
-  statusCode?: number;
-  message: any;
+export class HoustonCustomError extends Error {
+  constructor(public readonly statusCode: number, message: string) {
+    super(message)
+  }
 }
 
 /**
