@@ -76,7 +76,7 @@ export class GroupController {
       }
 
       // Save the groupState using the groupRepository
-      this.groupRepository.save(groupState)
+      await this.groupRepository.save(groupState)
 
       return response.status(STATUS_CODES.HTTP_STATUS_CREATED).json(groupState)
     } catch (error) {
@@ -217,9 +217,9 @@ export class GroupController {
    * @param {Request} request - The request object.
    * @param {Response} response - The response object.
    * @param {NextFunction} next - The next middleware function.
-   * @returns {Response<any> } A Promise that resolves when group filters are run successfully.
+
    */
-  async runGroupFilters(request: Request, response: Response, next: NextFunction): Response<any> {
+  async runGroupFilters(request: Request, response: Response, next: NextFunction) {
     try {
       // Clear Group Students
       await this.groupStudentRepository.clear()
